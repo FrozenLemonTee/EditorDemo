@@ -5,12 +5,15 @@ const APP_WIDTH : Int = 80
 const APP_HEIGHT : Int = 24
 
 ///|
+const CURSOR_BLINK_POLLS : Int = 16
+
+///|
 struct DemoEditor {
   section : @base.Section
   mut lines : Array[Array[Char]]
   mut cursor_x : Int
   mut cursor_y : Int
-  cursor_visible : Bool
+  mut cursor_visible : Bool
 }
 
 ///|
@@ -58,6 +61,23 @@ fn DemoEditor::width(self : DemoEditor) -> Int {
 ///|
 fn DemoEditor::height(self : DemoEditor) -> Int {
   self.section.area.height
+}
+
+///|
+fn DemoEditor::set_cursor_visible(
+  self : DemoEditor,
+  visible : Bool,
+) -> Bool {
+  if self.cursor_visible == visible {
+    return false
+  }
+  self.cursor_visible = visible
+  true
+}
+
+///|
+fn DemoEditor::toggle_cursor(self : DemoEditor) -> Unit {
+  self.cursor_visible = !self.cursor_visible
 }
 
 ///|
@@ -253,6 +273,19 @@ fn DemoEditor::handle_key(
             @base.EventResult::Redraw
           }
       }
+    @base.KeyCode::Space =>
+      if key.modifiers.ctrl || key.modifiers.alt || key.modifiers.meta {
+        @base.EventResult::Handled
+      } else {
+        self.insert_char(' ')
+        self.normalize_cursor()
+        @base.EventResult::Redraw
+      }
+    @base.KeyCode::Tab => {
+      self.insert_text("  ")
+      self.normalize_cursor()
+      @base.EventResult::Redraw
+    }
     @base.KeyCode::Enter => {
       self.newline()
       self.normalize_cursor()
@@ -339,6 +372,7 @@ struct DemoApp {
   mut running : Bool
   editor : DemoEditor
   mut status : String
+  mut blink_polls : Int
 }
 
 ///|
@@ -353,6 +387,7 @@ fn DemoApp::new() -> DemoApp {
       text="Type here. Arrow keys move the cursor. Backspace edits. q or Esc exits.",
     ),
     status: "Waiting for TerminalEvent input...",
+    blink_polls: 0,
   }
 }
 
@@ -416,6 +451,8 @@ fn DemoApp::handle_key(
   if key.state == @base.KeyState::Up {
     return @base.EventResult::Ignored
   }
+  self.blink_polls = 0
+  ignore(self.editor.set_cursor_visible(true))
   if key.code == @base.KeyCode::Esc || is_plain_q(key) {
     self.running = false
     self.status = "Exit requested. Restoring terminal..."
@@ -427,6 +464,17 @@ fn DemoApp::handle_key(
   }
   self.status = "Last event: key"
   self.editor.handle_event(@base.Event::key(key))
+}
+
+///|
+fn DemoApp::tick_cursor(self : DemoApp) -> @base.EventResult {
+  self.blink_polls += 1
+  if self.blink_polls < CURSOR_BLINK_POLLS {
+    return @base.EventResult::Ignored
+  }
+  self.blink_polls = 0
+  self.editor.toggle_cursor()
+  @base.EventResult::Redraw
 }
 
 ///|
@@ -495,6 +543,7 @@ fn run_demo(source : @lte_lunartui.EventSource) -> Unit {
   let app = DemoApp::new()
   let terminal = @terminal.Terminal::new(@base.Area::new(APP_WIDTH, APP_HEIGHT))
   @terminal.Terminal::clear()
+  @terminal.Terminal::hide_cursor()
   terminal.draw(app)
   while app.running {
     match source.poll_event(32) {
@@ -504,9 +553,16 @@ fn run_demo(source : @lte_lunartui.EventSource) -> Unit {
           @base.EventResult::Handled => ()
           @base.EventResult::Ignored => ()
         }
-      None => ()
+      None =>
+        match app.tick_cursor() {
+          @base.EventResult::Redraw => terminal.draw(app)
+          @base.EventResult::Handled => ()
+          @base.EventResult::Ignored => ()
+        }
     }
   }
+  @terminal.Terminal::show_cursor()
+  @terminal.Terminal::flush()
   source.restore_terminal()
   source.shutdown()
   @terminal.Terminal::clear()
