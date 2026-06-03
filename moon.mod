@@ -1,10 +1,10 @@
 name = "FrozenLemonTee/TextEditor"
 
-version = "0.1.0"
+version = "0.1.1"
 
 import {
-  "FrozenLemonTee/LunarEvent@0.1.0",
-  "FrozenLemonTee/LunarTUI@0.0.2",
+  "FrozenLemonTee/LunarEvent@0.1.1",
+  "FrozenLemonTee/LunarTUI@0.1.0",
   "moonbitlang/x@0.4.40",
 }
 
