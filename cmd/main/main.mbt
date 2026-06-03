@@ -81,10 +81,7 @@ fn DemoEditor::height(self : DemoEditor) -> Int {
 }
 
 ///|
-fn DemoEditor::set_cursor_visible(
-  self : DemoEditor,
-  visible : Bool,
-) -> Bool {
+fn DemoEditor::set_cursor_visible(self : DemoEditor, visible : Bool) -> Bool {
   if self.cursor_visible == visible {
     return false
   }
@@ -587,7 +584,7 @@ pub impl @base.Widget for DemoApp with fn handle_event(
 }
 
 ///|
-fn run_demo(source : @lte_lunartui.EventSource) -> Unit {
+fn run_demo(source : @lunartui.EventSource) -> Unit {
   let app = DemoApp::new()
   let terminal = @terminal.Terminal::new(@base.Area::new(APP_WIDTH, APP_HEIGHT))
   @terminal.Terminal::clear()
@@ -620,7 +617,7 @@ fn run_demo(source : @lte_lunartui.EventSource) -> Unit {
 
 ///|
 fn main {
-  let source = @lte_lunartui.EventSource::new()
+  let source = @lunartui.EventSource::new()
   match source.enter_raw_mode() {
     Ok(_) => run_demo(source)
     Err(_) => {
