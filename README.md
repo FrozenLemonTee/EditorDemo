@@ -2,7 +2,7 @@
 
 MoonBit demo application for testing the MVP integration loop:
 
-TerminalEvent C++ backend -> MoonBit binding -> LunarTUI adapter -> LunarTUI widget event handling -> redraw.
+TerminalEvent C++ core -> TerminalEvent C FFI -> LunarEvent MoonBit event API -> LunarEvent/lunartui adapter -> LunarTUI widget event handling -> redraw
 
 Run from this directory:
 
