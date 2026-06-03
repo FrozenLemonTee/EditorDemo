@@ -1,0 +1,14 @@
+import {
+  "FrozenLemonTee/LunarEvent/lunartui",
+  "FrozenLemonTee/LunarTUI/src/base",
+  "FrozenLemonTee/LunarTUI/src/terminal",
+  "moonbitlang/core/cmp",
+  "moonbitlang/x/fs",
+}
+
+supported_targets = "native"
+
+options(
+  "is-main": true,
+  link: { "native": { "cc": "clang", "cc-link-flags": "-lc++" } },
+)
