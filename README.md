@@ -1,6 +1,6 @@
-# TerminalEventDemo
+# TextEditor
 
-MoonBit demo application for testing the MVP integration loop:
+A MoonBit demo text editor application for testing the MVP integration loop:
 
 TerminalEvent C++ core -> TerminalEvent C FFI -> LunarEvent MoonBit event API -> LunarEvent/lunartui adapter -> LunarTUI widget event handling -> redraw
 
