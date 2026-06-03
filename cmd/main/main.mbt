@@ -8,6 +8,9 @@ const APP_HEIGHT : Int = 24
 const CURSOR_BLINK_POLLS : Int = 16
 
 ///|
+const SAVE_PATH : String = "terminal-event-demo.txt"
+
+///|
 struct DemoEditor {
   section : @base.Section
   mut lines : Array[Array[Char]]
@@ -51,6 +54,20 @@ fn DemoEditor::from_text(text : String) -> Array[Array[Char]] {
   }
   lines.push(line)
   lines
+}
+
+///|
+fn DemoEditor::to_text(self : DemoEditor) -> String {
+  let builder = StringBuilder::new()
+  for row, line in self.lines.iter2() {
+    if row > 0 {
+      builder.write_char('\n')
+    }
+    for _, ch in line.iter2() {
+      builder.write_char(ch)
+    }
+  }
+  builder.to_string()
 }
 
 ///|
@@ -444,6 +461,37 @@ fn is_ctrl_s(key : @base.KeyEvent) -> Bool {
 }
 
 ///|
+fn DemoApp::save_to_disk(self : DemoApp) -> Unit {
+  let content = self.editor.to_text()
+  @fs.write_string_to_file(SAVE_PATH, content) catch {
+    error => {
+      self.status = "Save failed: \{error}"
+      return
+    }
+  }
+  self.status = "Saved \{content.length()} chars to \{SAVE_PATH}"
+}
+
+///|
+test "DemoEditor::to_text preserves line breaks" {
+  let editor = DemoEditor::new(0, 0, 10, 3, text="alpha\nbeta\n")
+  inspect(editor.to_text(), content="alpha\nbeta\n")
+}
+
+///|
+test "DemoApp::save_to_disk writes editor content" {
+  @fs.remove_file(SAVE_PATH) catch {
+    _ => ()
+  }
+  let app = DemoApp::new()
+  app.save_to_disk()
+  inspect(@fs.read_file_to_string(SAVE_PATH), content=app.editor.to_text())
+  @fs.remove_file(SAVE_PATH) catch {
+    _ => ()
+  }
+}
+
+///|
 fn DemoApp::handle_key(
   self : DemoApp,
   key : @base.KeyEvent,
@@ -459,7 +507,7 @@ fn DemoApp::handle_key(
     return @base.EventResult::Redraw
   }
   if is_ctrl_s(key) {
-    self.status = "Ctrl+S observed by demo shell. File I/O is intentionally out of MVP scope."
+    self.save_to_disk()
     return @base.EventResult::Redraw
   }
   self.status = "Last event: key"
@@ -500,7 +548,7 @@ pub impl @base.Widget for DemoApp with fn render(
     frame, 2, 2, "Input path: C++ backend -> MoonBit binding -> LunarTUI adapter -> Widget",
   )
   draw_text(
-    frame, 2, 3, "Keys: type text, arrows move cursor, Backspace edits, Ctrl+S marks status",
+    frame, 2, 3, "Keys: type text, arrows move cursor, Backspace edits, Ctrl+S saves file",
   )
   draw_text(frame, 2, 4, "Quit: q or Esc")
   draw_box(frame, 1, 5, APP_WIDTH - 2, APP_HEIGHT - 7)
